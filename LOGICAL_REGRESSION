@@ -1,0 +1,56 @@
+# Step 1: Import libraries
+import numpy as np
+from sklearn.linear_model import LogisticRegression
+from sklearn.model_selection import train_test_split
+from sklearn.preprocessing import StandardScaler
+
+# Step 2: Generate synthetic dataset
+np.random.seed(42)
+age = np.random.randint(18, 65, size=(500, 1))
+income = np.random.randint(15000, 150000, size=(500, 1))
+gender = np.random.randint(0, 2, size=(500, 1))           # 0 = Female, 1 = Male
+owns_house = np.random.randint(0, 2, size=(500, 1))        # 0 = No, 1 = Yes
+
+X = np.hstack((age, income, gender, owns_house))
+
+# Target logic: higher income, middle-aged, owns a house => likely to purchase a car
+y = ((income > 40000) & (age > 25) & (age < 55) & (owns_house == 1)).astype(int).reshape(-1)
+
+# Step 3: Train-test split and scaling
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
+
+scaler = StandardScaler()
+X_train_scaled = scaler.fit_transform(X_train)
+X_test_scaled = scaler.transform(X_test)
+
+# Step 4: Train logistic regression model
+model = LogisticRegression()
+model.fit(X_train_scaled, y_train)
+
+# ---------------- USER INPUT SECTION ----------------
+print("\n🚘 Enter your details to check if you're likely to purchase a car:")
+
+try:
+    age_input = float(input("Age: "))
+    income_input = float(input("Monthly Income (₹): "))
+    gender_input = input("Gender (M/F): ").strip().upper()
+    owns_house_input = input("Do you own a house? (Y/N): ").strip().upper()
+
+    gender_val = 1 if gender_input == "M" else 0
+    owns_house_val = 1 if owns_house_input == "Y" else 0
+
+    user_input = np.array([[age_input, income_input, gender_val, owns_house_val]])
+    user_scaled = scaler.transform(user_input)
+
+    # Step 5: Prediction
+    prediction = model.predict(user_scaled)[0]
+    prob = model.predict_proba(user_scaled)[0][1]
+
+    # Step 6: Result
+    if prediction == 1:
+        print(f"\n✅ Likely to purchase a car (Confidence: {prob:.2f})")
+    else:
+        print(f"\n❌ Not likely to purchase a car (Confidence: {1 - prob:.2f})")
+
+except ValueError:
+    print("⚠️ Please enter valid numeric inputs.")
